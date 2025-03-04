@@ -42,12 +42,14 @@ function getByUser(user) {
     return todos.filter(todo => getUser(todo) === user);
 }
 
-
 function processCommand(command_line) {
     const command_line_split = command_line.split(' ');
     const command = command_line_split[0];
     const args = command_line_split.slice(1);
     switch (command) {
+        case 'sort':
+            processSortCommand(command_line_split);
+            break
         case 'show':
             console.log(todos);
             break;
@@ -60,6 +62,7 @@ function processCommand(command_line) {
                 return;
             }
             console.log(getByUser(args[0]));
+            break;
         case 'exit':
             process.exit(0);
             break;
@@ -67,6 +70,71 @@ function processCommand(command_line) {
             console.log('wrong command');
             break;
     }
+}
+
+function processSortCommand(command_line_split) {
+    const type = command_line_split[1];
+    switch (type) {
+        case 'importance':
+            console.log(sortImportant(todos));
+            break;
+        case 'user':
+            console.log(sortUser(todos));
+            break;
+        case 'date':
+            console.log(sortDate(todos));
+            break;
+        default:
+            console.log('wrong type');
+            break;
+    }
+}
+
+function sortDate(todos) {
+    return todos.sort((a, b) => {
+        const aDate = getDate(a);
+        const bDate = getDate(b);
+
+        if (aDate === undefined)
+            return 1;
+        if (bDate === undefined)
+            return -1;
+
+        return bDate - aDate;
+    });
+}
+
+function getDate(line) {
+    const lines = line.split(';');
+
+    if (lines.length < 3)
+        return undefined;
+
+    const dateLine = lines[1];
+
+    return new Date(dateLine);
+}
+
+function sortUser(todos){
+    return todos.sort((a, b) => {
+        const aUser = getUser(a);
+        const bUser = getUser(b);
+
+        if (aUser === "anon")
+            return 1;
+        if (bUser === "anon")
+            return -1;
+
+        return aUser.localeCompare(bUser);
+    })
+}
+
+function sortImportant(todos){
+    return todos.sort((a, b) => {
+        const aImportant = (a.match(/!/g) || []).length;
+        const bImportant = (b.match(/!/g) || []).length;
+        return bImportant - aImportant;
+    });
 }
 
 // TODO you can do it!
