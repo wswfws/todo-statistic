@@ -37,12 +37,13 @@ function formatTable(todos) {
     // Разделяем каждую строку на части
     const parsedTodos = todos.map(line => {
         let [user, date, comment] = line.split(';').map(part => part.trim());
+        const important = line.includes('!') ? "!" : " "
         if (user && !comment) {
             comment = user;
             user = undefined;
         }
         return {
-            user: user || 'anon', date: date || 'no_date', comment: comment || "no_coment"
+            user: user || 'anon', date: date || 'no_date', comment: comment || "no_comment", important
         };
     });
 
@@ -52,7 +53,7 @@ function formatTable(todos) {
     const maxComment = Math.max(...parsedTodos.map(t => t.comment.length), 8); // Минимум 8 (длина "Comment")
 
     // Форматируем заголовок таблицы
-    const header = `  User${' '.repeat(maxUser - 4)}  |  Date${' '.repeat(maxDate - 4)}  |  Comment${' '.repeat(maxComment - 7)}`;
+    const header = ` ! | User ${' '.repeat(maxUser - 4)} | Date${' '.repeat(maxDate - 4)} | Comment${' '.repeat(maxComment - 7)} `;
     const separator = '-'.repeat(header.length);
 
     // Форматируем каждую строку
@@ -61,7 +62,7 @@ function formatTable(todos) {
         const date = todo.date.padEnd(maxDate, ' ');
         const comment = todo.comment.padEnd(maxComment, ' ');
 
-        return `  ${user}  |  ${date}  |  ${comment}`;
+        return ` ${todo.important} | ${user}|${date}|${comment}`;
     });
 
     // Объединяем заголовок, разделитель и строки
