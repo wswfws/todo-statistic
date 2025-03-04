@@ -81,6 +81,9 @@ function getByUser(user) {
 function processCommand(command) {
     const args = command.split(' ');
     switch (args[0]) {
+        case 'date':
+            processDateCommand(args.slice(1));
+            break;
         case 'exit':
             process.exit(0);
             break;
@@ -104,6 +107,25 @@ function processCommand(command) {
             console.log('Invalid command');
             break;
     }
+}
+
+function processDateCommand(args) {
+    if (args.length === 0) {
+        console.log('Need date')
+        return;
+    }
+
+    const date = new Date(args[0]);
+
+    if (date.toString() === 'Invalid Date') {
+        console.log('Wrong date');
+        return;
+    }
+
+    console.log(formatTable(todos.filter(todo => {
+        const todoDate = getDate(todo.text);
+        return todoDate !== undefined && todoDate > date;
+    })));
 }
 
 function handleSortCommand(sortType) {
