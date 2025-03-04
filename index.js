@@ -84,6 +84,9 @@ function processCommand(command_line) {
     const command = command_line_split[0];
     const args = command_line_split.slice(1);
     switch (command) {
+        case 'date':
+            processDateCommand(args);
+            break;
         case 'sort':
             processSortCommand(command_line_split);
             break
@@ -107,6 +110,25 @@ function processCommand(command_line) {
             console.log('wrong command');
             break;
     }
+}
+
+function processDateCommand(args) {
+    if (args.length === 0) {
+        console.log('Need date')
+        return;
+    }
+
+    const date = new Date(args[0]);
+
+    if (date.toString() === 'Invalid Date') {
+        console.log('Wrong date');
+        return;
+    }
+
+    console.log(todos.filter(todo => {
+        const todoDate = getDate(todo);
+        return todoDate !== undefined && todoDate > date;
+    }));
 }
 
 function processSortCommand(command_line_split) {
