@@ -32,12 +32,31 @@ for (const file of files) {
         }
     }
 }
+const getUser = (todo) => {
+    const parts = todo.split(";");
+    if (parts.length > 2) return parts[0];
+    return "anon"
+}
 
-function processCommand(command) {
+function getByUser(user) {
+    return todos.filter(todo => getUser(todo) === user);
+}
+
+
+function processCommand(command_line) {
+    const command_line_split = command_line.split(' ');
+    const command = command_line_split[0];
+    const args = command_line_split.slice(1);
     switch (command) {
         case 'show':
             console.log(todos);
             break;
+        case 'user':
+            if (args.length === 0) {
+                console.log("need username")
+                return;
+            }
+            console.log(getByUser(args[0]));
         case 'exit':
             process.exit(0);
             break;
