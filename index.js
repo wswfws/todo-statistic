@@ -62,7 +62,7 @@ function formatTable(todos) {
         const date = todo.date.padEnd(maxDate, ' ');
         const comment = todo.comment.padEnd(maxComment, ' ');
 
-        return ` ${todo.important} | ${user}|${date}|${comment}`;
+        return ` ${todo.important} | ${user} | ${date} | ${comment} `;
     });
 
     // Объединяем заголовок, разделитель и строки
@@ -114,13 +114,13 @@ function processSortCommand(command_line_split) {
     const type = command_line_split[1];
     switch (type) {
         case 'importance':
-            console.log(sortImportant(todos));
+            console.log(formatTable(sortImportant(todos)));
             break;
         case 'user':
-            console.log(sortUser(todos));
+            console.log(formatTable(sortUser(todos)));
             break;
         case 'date':
-            console.log(sortDate(todos));
+            console.log(formatTable(sortDate(todos)));
             break;
         default:
             console.log('wrong type');
