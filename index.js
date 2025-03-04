@@ -32,6 +32,43 @@ for (const file of files) {
         }
     }
 }
+
+function formatTable(todos) {
+    // Разделяем каждую строку на части
+    const parsedTodos = todos.map(line => {
+        let [user, date, comment] = line.split(';').map(part => part.trim());
+        if (user && !comment) {
+            comment = user;
+            user = undefined;
+        }
+        return {
+            user: user || 'anon', date: date || 'no_date', comment: comment || "no_coment"
+        };
+    });
+
+    // Определяем максимальные длины для каждой колонки
+    const maxUser = Math.max(...parsedTodos.map(t => t.user.length), 4); // Минимум 4 (длина "User")
+    const maxDate = Math.max(...parsedTodos.map(t => t.date.length), 10); // Минимум 10 (длина "YYYY-MM-DD")
+    const maxComment = Math.max(...parsedTodos.map(t => t.comment.length), 8); // Минимум 8 (длина "Comment")
+
+    // Форматируем заголовок таблицы
+    const header = `  User${' '.repeat(maxUser - 4)}  |  Date${' '.repeat(maxDate - 4)}  |  Comment${' '.repeat(maxComment - 7)}`;
+    const separator = '-'.repeat(header.length);
+
+    // Форматируем каждую строку
+    const rows = parsedTodos.map(todo => {
+        const user = todo.user.padEnd(maxUser, ' ');
+        const date = todo.date.padEnd(maxDate, ' ');
+        const comment = todo.comment.padEnd(maxComment, ' ');
+
+        return `  ${user}  |  ${date}  |  ${comment}`;
+    });
+
+    // Объединяем заголовок, разделитель и строки
+    return [header, separator, ...rows].join('\n');
+}
+
+
 const getUser = (todo) => {
     const parts = todo.split(";");
     if (parts.length > 2) return parts[0];
@@ -51,17 +88,17 @@ function processCommand(command_line) {
             processSortCommand(command_line_split);
             break
         case 'show':
-            console.log(todos);
+            console.log(formatTable(todos));
             break;
         case 'important':
-            console.log(todos.filter(todo => todo.includes('!')));
+            console.log(formatTable(todos.filter(todo => todo.includes('!'))));
             break;
         case 'user':
             if (args.length === 0) {
                 console.log("need username")
                 return;
             }
-            console.log(getByUser(args[0]));
+            console.log(formatTable(getByUser(args[0])));
             break;
         case 'exit':
             process.exit(0);
@@ -115,7 +152,7 @@ function getDate(line) {
     return new Date(dateLine);
 }
 
-function sortUser(todos){
+function sortUser(todos) {
     return todos.sort((a, b) => {
         const aUser = getUser(a);
         const bUser = getUser(b);
@@ -129,7 +166,7 @@ function sortUser(todos){
     })
 }
 
-function sortImportant(todos){
+function sortImportant(todos) {
     return todos.sort((a, b) => {
         const aImportant = (a.match(/!/g) || []).length;
         const bImportant = (b.match(/!/g) || []).length;
