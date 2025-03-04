@@ -38,6 +38,9 @@ function processCommand(command) {
         case 'show':
             console.log(todos);
             break;
+        case 'important':
+            console.log(todos.filter(todo => todo.includes('!')));
+            break;
         case 'exit':
             process.exit(0);
             break;
