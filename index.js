@@ -11,6 +11,26 @@ function getFiles() {
     return filePaths.map(path => readFile(path));
 }
 
+function getToDoInRow(row) {
+    const match = line.match(/\/\/\s+TODO\s+(.+)/);
+    if (match) {
+        return match[1].trim();
+    }
+    return undefined;
+}
+
+function getToDoInText(text) {
+    const lines = text.split('\n');
+    return lines.map(line => getToDoInRow(line)).filter(t => t !== undefined)
+}
+
+const todos = [];
+for (const file of files) {
+    for (const todo in getToDoInText(file)) {
+        todos.push(todo)
+    }
+}
+
 function processCommand(command) {
     switch (command) {
         case 'exit':
