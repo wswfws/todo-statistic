@@ -21,13 +21,15 @@ function getToDoInRow(row) {
 
 function getToDoInText(text) {
     const lines = text.split('\n');
-    return lines.map(line => getToDoInRow(line)).filter(t => t !== undefined)
+    return lines.map(line => getToDoInRow(line))
 }
 
 const todos = [];
 for (const file of files) {
     for (const todo in getToDoInText(file)) {
-        todos.push(todo)
+        if (todo) {
+            todos.push(todo)
+        }
     }
 }
 
