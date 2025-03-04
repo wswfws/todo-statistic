@@ -1,3 +1,4 @@
+const path = require('path');
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
 
@@ -8,171 +9,134 @@ readLine(processCommand);
 
 function getFiles() {
     const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
-    return filePaths.map(path => readFile(path));
+    return filePaths.map(filePath => ({ path: filePath, content: readFile(filePath) }));
 }
 
 function getToDoInRow(row) {
     const match = row.match(/\/\/\s+TODO\s+(.+)/);
-    if (match) {
-        return match[1].trim();
-    }
-    return undefined;
+    return match ? match[1].trim() : undefined;
 }
 
 function getToDoInText(text) {
-    const lines = text.split('\n');
-    return lines.map(line => getToDoInRow(line))
+    return text.split('\n').map(line => getToDoInRow(line));
 }
 
 const todos = [];
 for (const file of files) {
-    for (const todo of getToDoInText(file)) {
-        if (todo) {
-            todos.push(todo)
+    const todosInFile = getToDoInText(file.content);
+    for (const todoText of todosInFile) {
+        if (todoText) {
+            todos.push({ text: todoText, path: file.path });
         }
     }
 }
 
 function formatTable(todos) {
-    // Разделяем каждую строку на части
-    const parsedTodos = todos.map(line => {
+    const parsedTodos = todos.map(todoObj => {
+        const line = todoObj.text;
         let [user, date, comment] = line.split(';').map(part => part.trim());
-        const important = line.includes('!') ? "!" : " "
+        const important = line.includes('!') ? "!" : " ";
         if (user && !comment) {
             comment = user;
             user = undefined;
         }
+        const filename = path.basename(todoObj.path);
         return {
-            user: user || 'anon', date: date || 'no_date', comment: comment || "no_comment", important
+            user: user || 'anon',
+            date: date || 'no_date',
+            comment: comment || 'no_comment',
+            important,
+            filename: filename || 'unknown'
         };
     });
 
-    // Определяем максимальные длины для каждой колонки
-    const maxUser = Math.max(...parsedTodos.map(t => t.user.length), 4); // Минимум 4 (длина "User")
-    const maxDate = Math.max(...parsedTodos.map(t => t.date.length), 10); // Минимум 10 (длина "YYYY-MM-DD")
-    const maxComment = Math.max(...parsedTodos.map(t => t.comment.length), 8); // Минимум 8 (длина "Comment")
+    const maxUser = Math.max(...parsedTodos.map(t => t.user.length), 4);
+    const maxDate = Math.max(...parsedTodos.map(t => t.date.length), 10);
+    const maxFilename = Math.max(...parsedTodos.map(t => t.filename.length), 8);
+    const maxComment = Math.max(...parsedTodos.map(t => t.comment.length), 7);
 
-    // Форматируем заголовок таблицы
-    const header = ` ! | User ${' '.repeat(maxUser - 4)} | Date${' '.repeat(maxDate - 4)} | Comment${' '.repeat(maxComment - 7)} `;
+    const header = ` ! | User ${' '.repeat(maxUser - 4)} | Date${' '.repeat(maxDate - 4)} | Filename ${' '.repeat(maxFilename - 8)} | Comment${' '.repeat(maxComment - 7)} `;
     const separator = '-'.repeat(header.length);
 
-    // Форматируем каждую строку
     const rows = parsedTodos.map(todo => {
         const user = todo.user.padEnd(maxUser, ' ');
         const date = todo.date.padEnd(maxDate, ' ');
+        const filename = todo.filename.padEnd(maxFilename, ' ');
         const comment = todo.comment.padEnd(maxComment, ' ');
-
-        return ` ${todo.important} | ${user} | ${date} | ${comment} `;
+        return ` ${todo.important} | ${user} | ${date} | ${filename} | ${comment} `;
     });
 
-    // Объединяем заголовок, разделитель и строки
     return [header, separator, ...rows].join('\n');
 }
 
-
-const getUser = (todo) => {
-    const parts = todo.split(";");
-    if (parts.length > 2) return parts[0];
-    return "anon"
+const getUser = (todoText) => {
+    const parts = todoText.split(";");
+    return parts.length > 2 ? parts[0] : "anon";
 }
 
 function getByUser(user) {
-    return todos.filter(todo => getUser(todo) === user);
+    return todos.filter(todo => getUser(todo.text) === user);
 }
 
-function processCommand(command_line) {
-    const command_line_split = command_line.split(' ');
-    const command = command_line_split[0];
-    const args = command_line_split.slice(1);
-    switch (command) {
-        case 'sort':
-            processSortCommand(command_line_split);
-            break
+function processCommand(command) {
+    const args = command.split(' ');
+    switch (args[0]) {
+        case 'exit':
+            process.exit(0);
+            break;
         case 'show':
             console.log(formatTable(todos));
             break;
         case 'important':
-            console.log(formatTable(todos.filter(todo => todo.includes('!'))));
+            console.log(formatTable(todos.filter(todo => todo.text.includes('!'))));
             break;
         case 'user':
-            if (args.length === 0) {
-                console.log("need username")
-                return;
+            if (args.length < 2) {
+                console.log("Error: Username required");
+                break;
             }
-            console.log(formatTable(getByUser(args[0])));
+            console.log(formatTable(getByUser(args[1])));
             break;
-        case 'exit':
-            process.exit(0);
+        case 'sort':
+            handleSortCommand(args[1]);
             break;
         default:
-            console.log('wrong command');
+            console.log('Invalid command');
             break;
     }
 }
 
-function processSortCommand(command_line_split) {
-    const type = command_line_split[1];
-    switch (type) {
+function handleSortCommand(sortType) {
+    let sorted;
+    switch (sortType) {
         case 'importance':
-            console.log(formatTable(sortImportant(todos)));
+            sorted = [...todos].sort((a, b) =>
+                (b.text.match(/!/g) || []).length - (a.text.match(/!/g) || []).length);
             break;
         case 'user':
-            console.log(formatTable(sortUser(todos)));
+            sorted = [...todos].sort((a, b) => {
+                const aUser = getUser(a.text);
+                const bUser = getUser(b.text);
+                return aUser.localeCompare(bUser) || (aUser === 'anon' ? 1 : -1);
+            });
             break;
         case 'date':
-            console.log(formatTable(sortDate(todos)));
+            sorted = [...todos].sort((a, b) => {
+                const aDate = getDate(a.text);
+                const bDate = getDate(b.text);
+                return (bDate || 0) - (aDate || 0);
+            });
             break;
         default:
-            console.log('wrong type');
-            break;
+            console.log('Invalid sort type');
+            return;
     }
+    console.log(formatTable(sorted));
 }
 
-function sortDate(todos) {
-    return todos.sort((a, b) => {
-        const aDate = getDate(a);
-        const bDate = getDate(b);
-
-        if (aDate === undefined)
-            return 1;
-        if (bDate === undefined)
-            return -1;
-
-        return bDate - aDate;
-    });
+function getDate(todoText) {
+    const parts = todoText.split(';');
+    return parts.length >= 2 ? new Date(parts[1].trim()) : null;
 }
 
-function getDate(line) {
-    const lines = line.split(';');
-
-    if (lines.length < 3)
-        return undefined;
-
-    const dateLine = lines[1];
-
-    return new Date(dateLine);
-}
-
-function sortUser(todos) {
-    return todos.sort((a, b) => {
-        const aUser = getUser(a);
-        const bUser = getUser(b);
-
-        if (aUser === "anon")
-            return 1;
-        if (bUser === "anon")
-            return -1;
-
-        return aUser.localeCompare(bUser);
-    })
-}
-
-function sortImportant(todos) {
-    return todos.sort((a, b) => {
-        const aImportant = (a.match(/!/g) || []).length;
-        const bImportant = (b.match(/!/g) || []).length;
-        return bImportant - aImportant;
-    });
-}
-
-// TODO you can do it!
+// TODO: Add more test cases
