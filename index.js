@@ -12,7 +12,7 @@ function getFiles() {
 }
 
 function getToDoInRow(row) {
-    const match = line.match(/\/\/\s+TODO\s+(.+)/);
+    const match = row.match(/\/\/\s+TODO\s+(.+)/);
     if (match) {
         return match[1].trim();
     }
@@ -26,7 +26,7 @@ function getToDoInText(text) {
 
 const todos = [];
 for (const file of files) {
-    for (const todo in getToDoInText(file)) {
+    for (const todo of getToDoInText(file)) {
         if (todo) {
             todos.push(todo)
         }
@@ -35,6 +35,9 @@ for (const file of files) {
 
 function processCommand(command) {
     switch (command) {
+        case 'show':
+            console.log(todos);
+            break;
         case 'exit':
             process.exit(0);
             break;
