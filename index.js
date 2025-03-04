@@ -51,6 +51,9 @@ function processCommand(command_line) {
         case 'show':
             console.log(todos);
             break;
+        case 'important':
+            console.log(todos.filter(todo => todo.includes('!')));
+            break;
         case 'user':
             if (args.length === 0) {
                 console.log("need username")
